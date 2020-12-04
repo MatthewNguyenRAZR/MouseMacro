@@ -2,8 +2,6 @@
 A macro program written in AutoHotKey that records and runs mouse macros.  
 Main purpose to make gacha games easier lul.
 
-<hr />
-
 ## Goal Stuff
 **Problem:**
 1. Gacha games are too grindy
@@ -13,8 +11,6 @@ Main purpose to make gacha games easier lul.
 1. Automate repetitive tasks
 2. Prevent Macro Detection (Randmness)
 
-<hr />
-
 ## Features To Add
 - Basic
   - Record, Export, Import Macros
@@ -22,8 +18,6 @@ Main purpose to make gacha games easier lul.
   - Mouse & Drag Macros (Not Planning to do option yet)
 - Multi-macro compiler: Combine and organize multiple macros to run
 - Random Settings for macro
-
-<hr />
 
 ## Planning Stuff
 **Menu Options**
@@ -44,8 +38,6 @@ Main purpose to make gacha games easier lul.
   - Run MacroList
   - Multi macro compiler
   	- Menu that adds listed macros to an array
-
-
 
 **Objects:**
 
