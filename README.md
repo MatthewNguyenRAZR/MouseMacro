@@ -9,7 +9,7 @@ Main purpose to make gacha games easier lul.
 
 **Solution:**
 1. Automate repetitive tasks
-2. Prevent Macro Detection (Randmness)
+2. Prevent Macro Detection (Randomness)
 
 ## Features To Add
 - Basic
@@ -21,62 +21,38 @@ Main purpose to make gacha games easier lul.
 
 ## Planning Stuff
 **Menu Options**
-- Create Macro
-  - Import Macro
-  - Record Macro
-    - Mouse Click Only Macro
-- List currently recorded macros
-  - Select Macro:
-    - Run Macro
-    - Export Macro
-  	- Macro Settings
-  		- Edit Name
+- List currently recorded macros to select
+  - Run Macro
+  - Macro Settings
+      - Edit Pixel Disposition
   		- Edit Time Delay Randomization
-  		- Edit Pixel Disposition
-      - Edit Random Chance of Running or Not
+      - Edit Random Run Chance
+      - Amount of times repeated
+- Record Macro
+- End Macro Recording
 - List currently created macro list
+  - Add Macro (from list)
+  - Remove Macro (from list)
   - Run MacroList
-  - Multi macro compiler
-  	- Menu that adds listed macros to an array
+  - Amount of times repeated
 
 **Objects:**
 
 Object MouseClickMacroObject- Used to Create, Modify and Run A MouseClickMacro
 - Parameters
-	- macro.txt
+	- macroPath(string)
 - Attributes
-	- runnable=0
-	- MacroName(String)
-	- MacroType(int)
- 	- xCoordArray[]
- 	- yCoordArray[]
- 	- tCoordArray[]
+  - macroPath(string)
  	- pixelDisposition(int)
  	- randomTimeDelay(int)
   - randomRunChance=1 (decimal,percentage)
+  - repeatAmount(int)
+  - xCoordArray[]
+  - yCoordArray[]
+  - tCoordArray[]
 - Methods
- 	- RunMacro
-		- RunNormal
-		- RunByRandomChance
- 	- static RecordExportMacro
- 	- static ImportSetMacro
-	- SetMacroName
+  - isRunnable
 	- SetCoordDisposition
   - SetRandomTimeDelay
   - runMacro (will check isRunnable, willHaveChanceToRun)
-  - isRunnable
-  - willHaveChanceToRun
-
-
-Object MacroList(MacroObject_Input) - Used to mix and match macros or repeat a single macro
-- Attributes
-	- MacroListName(String)
-	- MacroArray[](String Path)
-	- TimeBetweenMacro(int)
-- Methods:
-	- RunMacros
-	- AddMacro
-	- RemoveMacro
-	- static ExportMacroList (Exports a Windows Folder with list of macros and a txt file that organizes it into a MacroList Object)
-	- static ImportMacroList (Organizes Folder into a MacroList Object based on a txt file)
-  - SwapMacroObject
+  - exportMacro (path, x array, y array, t array)
