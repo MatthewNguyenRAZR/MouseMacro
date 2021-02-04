@@ -10,9 +10,10 @@ Gui, 1:Destroy
 ;Global Variable
 isRecording := 0
 global saveMacroDirectory := A_ScriptDir . "\IndividualMacros\"
-global xCoordArray := []
-global yCoordArray := []
-global tCoordArray := []
+global xTempCoordArray := []
+global yTempCoordArray := []
+global tTempCoordArray := []
+global windowTempArray := []
 FileList := ""
 CheckFolderExistence()
 
@@ -61,10 +62,17 @@ return
 
 ;Labels_________________________________________________________________________
 
-runMacro:
-	Gui, +OwnDialogs
-	Gui, Submit,NoHide
-	msgbox, %MacroList%
+runMacro: ; Should Minimize GUI
+	if(isRecording = 1){
+		Msgbox, Can't Run Macro When Recording
+	}else{
+		Gui, +OwnDialogs
+		Gui, Submit,NoHide
+		runningMacroPath := saveMacroDirectory . MacroList
+		msgbox, %runningMacroPath%
+		runningMacro := new MacroObject(runningMacroPath)
+		runningMacro.runMacro()
+	}
 	return
 
 editMacro:
@@ -79,7 +87,7 @@ editMacro:
 	Gui, 2:Add, Text, y+20, Random Time Delay Onclick (Millisecond Range:0-10000)
 	Gui, 2:Add, Edit, y+20 w50 vTime, 0
 	Gui, 2:Add, Text, y+20, Random Run Chance (Percent Range:1-100)
-	Gui, 2:Add, Edit, y+20 w50 vrunChance, 1
+	Gui, 2:Add, Edit, y+20 w50 vrunChance, 100
 	Gui, 2:Add, Text, y+20, Repeat Amount (Repeat Range:1-10)
 	Gui, 2:Add, Edit, y+20 w50 vrepeatAmount, 1
 	return
@@ -91,6 +99,10 @@ editMacro:
 
 record:
 	isRecording=1
+	xTempCoordArray := []
+	yTempCoordArray := []
+	tTempCoordArray := []
+	windowTempArray := []
 	return
 
 
@@ -113,64 +125,158 @@ return
 ; Sends Mouse Coordinates and time into a variable
 ~LButton::
 Keywait,LButton
-MouseGetPos,XPos,YPos
+MouseGetPos,XPos,YPos,Window
 time:=A_TimeSincePriorHotkey
+; Msgbox, X:%Xpos% Y:%YPos%
 If isRecording=1
 {
-	MsgBox, X: %XPos% Y: %YPos% T: %time%
-	xCoordArray.Push(XPos)
-	yCoordArray.Push(YPos)
-	tCoordArray.Push(time)
+	xTempCoordArray.Push(XPos)
+	yTempCoordArray.Push(YPos)
+	tTempCoordArray.Push(time)
+	windowTempArray.Push(Window)
 }
 return
 
 
 
 ;Methods________________________________________________________________________
-CheckFolderExistence()
+CheckFolderExistence() ; Checks if macro save directory is created
 {
 	if (!FileExist(saveMacroDirectory))
 	{
-		Msgbox, Create this directory before using.%saveMacroDirectory%
+		Msgbox, Create this directory before using:`n%saveMacroDirectory%
 		return 0
 	}
 	return 1
 }
-
-OutputRecordedFile()
+OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro save directory
 {
-	InputBox, Name, Input Name of Recorded Macro
-	if (Name = ""){
-		Msgbox, Invalid Name, Macro Not Saved
+	if (xTempCoordArray.MaxIndex()=1 || xTempCoordArray.MaxIndex()=""){
+		Msgbox, No actions were recorded. (Or actions were with this program)
 	}
-	else
-	{
-		filePath:= saveMacroDirectory . name . ".txt"
-		MsgBox, Path: %filePath%
-		if FileExist(filePath)
-		{
-			FileDelete, %filePath%
+	else{
+		InputBox, Name, Input Name of Recorded Macro
+		if (Name = ""){
+			Msgbox, Invalid Name, Macro Not Saved
 		}
-		FileAppend, 0`n0`n100`n1`n, %filePath%
-		xCoordArray.RemoveAt(1)
-		yCoordArray.RemoveAt(1)
-		tCoordArray.RemoveAt(1)
-		xTemp := xCoordArray.RemoveAt(1)
-		yTemp := yCoordArray.RemoveAt(1)
-		tTemp := 0
-		FileAppend, %xTemp%`n%yTemp%`n%tTemp%`n, %filePath%
-		while xCoordArray.MaxIndex()>0
+		else
 		{
-			xTemp := xCoordArray.RemoveAt(1)
-			yTemp := yCoordArray.RemoveAt(1)
-			tTemp :=tCoordArray.RemoveAt(1)
-			FileAppend, %xTemp%`n%yTemp%`n%tTemp%`n, %filePath%
+			filePath:= saveMacroDirectory . name . ".txt"
+			MsgBox, Path: %filePath%
+			if FileExist(filePath)
+			{
+				FileDelete, %filePath%
+			}
+			FileAppend, 0`n0`n100`n1`n, %filePath% ; Default Input For Coordinate Dispostion (0), Time Delay Onclick (0), Random Run Chance (100), Repeat Amount (1)
+			xTempCoordArray.RemoveAt(1)
+			yTempCoordArray.RemoveAt(1)
+			tTempCoordArray.RemoveAt(1)
+			windowTempArray.RemoveAt(1)
+			xTemp := xTempCoordArray.RemoveAt(1)
+			yTemp := yTempCoordArray.RemoveAt(1)
+			tTemp := 0
+			winTemp := windowTempArray.RemoveAt(1)
+			FileAppend, %xTemp%`n%yTemp%`n%tTemp%`n%winTemp%`n, %filePath%
+			while xTempCoordArray.MaxIndex()>0
+			{
+				xTemp := xTempCoordArray.RemoveAt(1)
+				yTemp := yTempCoordArray.RemoveAt(1)
+				tTemp :=tTempCoordArray.RemoveAt(1)
+				winTemp := windowTempArray.RemoveAt(1)
+				FileAppend, %xTemp%`n%yTemp%`n%tTemp%`n%winTemp%`n, %filePath%
+			}
 		}
+		xTempCoordArray := []
+		yTempCoordArray := []
+		tTempCoordArray := []
+		windowTempArray := []
 	}
+}
+
+
+Class MacroObject{
+ ; C:\Users\matth\Downloads\AutoHotKeyStuff\GFLMacroKordRefill.txt
+ ; Instantiate Arrays
+	locationDataArray := [] ; Array used to save every line of text file as an array index to organize and set the attributes
+	randomCoordDisposition := 0
+	randomTimeDelay := 0
+	runChance := 100
+	repeatAmount:= 1
 	xCoordArray := []
 	yCoordArray := []
 	tCoordArray := []
+	windowArray := []
+
+
+	__New(macroFilePath)
+	{
+		this.macroFilePath := macroFilePath
+		Loop, read, %macroFilePath%
+		this.locationDataArray.Push(A_LoopReadLine)
+
+
+		this.randomCoordDisposition := this.locationDataArray.RemoveAt(1)
+		this.randomTimeDelay := this.locationDataArray.RemoveAt(1)
+		this.runChance := this.locationDataArray.RemoveAt(1)
+		this.repeatAmount:= this.locationDataArray.RemoveAt(1)
+
+		while this.locationDataArray.MaxIndex()>0
+		{
+			this.xCoordArray.Push(this.locationDataArray.RemoveAt(1))
+			this.yCoordArray.Push(this.locationDataArray.RemoveAt(1))
+			this.tCoordArray.Push(this.locationDataArray.RemoveAt(1))
+			this.windowArray.Push(this.locationDataArray.RemoveAt(1))
+		}
+	}
+	runMacro()
+	{
+		repeatCounter := this.repeatAmount
+		while(repeatCounter>=1)
+		{
+				Random, runChanceCounter, 0,100
+				if(runChanceCounter<(this.runChance+1)){
+						this.runMacroOnce()
+				}
+				repeatCounter -= 1
+		}
+		MsgBox, Macro Success
+	}
+	runMacroOnce() ; runs recorded macro with random poistioning and timing offsets
+	{
+		if(this.xCoordArray.MaxIndex()=this.yCoordArray.MaxIndex() and this.yCoordArray.MaxIndex()=this.tCoordArray.MaxIndex()){
+			for index, element in this.xCoordArray ; Runs Coordinates in File
+			{
+				Random, randCoordDisposition, (this.randomCoordDisposition*-1),this.randomCoordDisposition
+				Random, randTimeDisposition, 0,this.randomTimeDelay
+				x := this.xCoordArray[index]+randCoordDisposition
+				y := this.yCoordArray[index]+randCoordDisposition
+				sleeptime := this.tCoordArray[index] + randTimeDisposition
+
+				sleep, %sleeptime%
+				window_id := this.windowArray[index]
+				WinActivate, ahk_id %window_id%
+				KeyWait Control
+				KeyWait Alt
+				BlockInput On
+				MouseClick, left, %x%, %y%
+				BlockInput Off
+			}
+		}else{
+			MsgBox, Macro Failed, Press Tab
+		}
+		return
+	}
+	editAttributes(){
+		return
+	}
 }
 
+
+
+
 GuiClose:
+ExitApp
+
+Esc::
+MsgBox, Macro is Exiting...
 ExitApp

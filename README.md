@@ -24,10 +24,10 @@ Main purpose to make gacha games easier lul.
 - List currently recorded macros to select
   - Run Macro
   - Macro Settings
-      - Edit Pixel Disposition
-  		- Edit Time Delay Randomization
-      - Edit Random Run Chance
-      - Amount of times repeated
+    - Edit Pixel Disposition
+  	- Edit Time Delay Randomization
+    - Edit Random Run Chance
+    - Amount of times repeated
 - Record Macro
 - End Macro Recording
 - List currently created macro list
@@ -52,7 +52,7 @@ Object MouseClickMacroObject- Used to Create, Modify and Run A MouseClickMacro
   - tCoordArray[]
 - Methods
   - isRunnable
-	- SetCoordDisposition
+  - SetCoordDisposition
   - SetRandomTimeDelay
   - runMacro (will check isRunnable, willHaveChanceToRun)
-  - exportMacro (path, x array, y array, t array)
+  - editAttributes (can edit attributes of macro)
