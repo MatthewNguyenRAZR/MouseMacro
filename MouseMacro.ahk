@@ -4,8 +4,18 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
+global guiWindowX := 0
+global guiWindowY := 0
+
 refresh:
+Gui,+LastFound
+WinGetPos,xWindow,yWindow
+if (xWindow != "" or yWindow != ""){
+	guiWindowX = %xWindow%
+	guiWindowY = %yWindow%
+}
 Gui, 1:Destroy
+
 
 ;Global Variable
 isRecording := 0
@@ -14,6 +24,7 @@ global xTempCoordArray := []
 global yTempCoordArray := []
 global tTempCoordArray := []
 global windowTempArray := []
+global gui_Id := ""
 FileList := ""
 CheckFolderExistence()
 
@@ -28,7 +39,7 @@ yMacroListOptions := 320
 GUI, 1:-AlwaysOnTop ; + makes it always stay up, - will make it go behind other windows
 Gui, 1:Color, 222222
 Gui, 1:Color,,222222
-Gui, 1:Show, w420 h600, Mouse Macro
+Gui, 1:Show, x%guiWindowX% y%guiWindowY% w420 h600, Mouse Macro
 
 ; Options Layout
 
@@ -69,19 +80,25 @@ runMacro: ; Should Minimize GUI
 		Gui, +OwnDialogs
 		Gui, Submit,NoHide
 		runningMacroPath := saveMacroDirectory . MacroList
-		msgbox, %runningMacroPath%
 		runningMacro := new MacroObject(runningMacroPath)
 		runningMacro.runMacro()
 	}
 	return
 
 editMacro:
+	runningMacroPath := saveMacroDirectory . MacroList
+	runningMacro := new MacroObject(runningMacroPath)
+	; coordDispositionInput :=
+	; timeDelayInput :=
+	; runChanceInput :=
+	; repeatAmountInput :=
 	Gui, 2:Show, w430 h400, Settings
 	Gui, 2:Color, 222222
 	Gui, 1:+Disabled
 	Gui, 2:Font, s14 cDDDDDD
 	Gui, 2:Add, Text, x%xMacroOptions% y%yMacroOptions%, Settings
-		Gui, 2:Font, s10 cDDDDDD
+	Gui, 2:Font, s10 cDDDDDD
+
 	Gui, 2:Add, Text, y+20, Random Coordinate Dispostion (Pixel Displacement Range:0-10)
 	Gui, 2:Add, Edit, y+20 w50 vCoord, 0
 	Gui, 2:Add, Text, y+20, Random Time Delay Onclick (Millisecond Range:0-10000)
@@ -90,6 +107,7 @@ editMacro:
 	Gui, 2:Add, Edit, y+20 w50 vrunChance, 100
 	Gui, 2:Add, Text, y+20, Repeat Amount (Repeat Range:1-10)
 	Gui, 2:Add, Edit, y+20 w50 vrepeatAmount, 1
+	EditMacroAttributes()
 	return
 
 2GuiClose:
@@ -99,6 +117,9 @@ editMacro:
 
 record:
 	isRecording=1
+	MouseGetPos,,,MacroWindowID
+	gui_Id = %MacroWindowID%
+	Msgbox, %gui_Id%
 	xTempCoordArray := []
 	yTempCoordArray := []
 	tTempCoordArray := []
@@ -109,7 +130,7 @@ record:
 stopRecording:
 	isRecording=0
 	OutputRecordedFile()
-	return
+	Goto, refresh
 
 
 MouseRecordingNotification:
@@ -127,8 +148,7 @@ return
 Keywait,LButton
 MouseGetPos,XPos,YPos,Window
 time:=A_TimeSincePriorHotkey
-; Msgbox, X:%Xpos% Y:%YPos%
-If isRecording=1
+If (isRecording=1 and gui_Id != Window)
 {
 	xTempCoordArray.Push(XPos)
 	yTempCoordArray.Push(YPos)
@@ -168,10 +188,11 @@ OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro sav
 				FileDelete, %filePath%
 			}
 			FileAppend, 0`n0`n100`n1`n, %filePath% ; Default Input For Coordinate Dispostion (0), Time Delay Onclick (0), Random Run Chance (100), Repeat Amount (1)
-			xTempCoordArray.RemoveAt(1)
-			yTempCoordArray.RemoveAt(1)
-			tTempCoordArray.RemoveAt(1)
-			windowTempArray.RemoveAt(1)
+			xTemp := xTempCoordArray.RemoveAt(1)
+			yTemp := yTempCoordArray.RemoveAt(1)
+			tTemp :=tTempCoordArray.RemoveAt(1)
+			winTemp := windowTempArray.RemoveAt(1)
+
 			xTemp := xTempCoordArray.RemoveAt(1)
 			yTemp := yTempCoordArray.RemoveAt(1)
 			tTemp := 0
@@ -192,7 +213,10 @@ OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro sav
 		windowTempArray := []
 	}
 }
+EditMacroAttributes()
+{
 
+}
 
 Class MacroObject{
  ; C:\Users\matth\Downloads\AutoHotKeyStuff\GFLMacroKordRefill.txt
@@ -266,7 +290,7 @@ Class MacroObject{
 		}
 		return
 	}
-	editAttributes(){
+	editAttributes(coordDispositionInput, timeDelayInput, runChanceInput, repeatAmountInput){
 		return
 	}
 }
@@ -277,6 +301,7 @@ Class MacroObject{
 GuiClose:
 ExitApp
 
+; In case of a critical error in macro execution press Esc to end program
 Esc::
 MsgBox, Macro is Exiting...
 ExitApp
