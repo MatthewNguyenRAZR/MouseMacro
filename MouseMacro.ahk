@@ -211,16 +211,16 @@ runMacroList:
 	if(isRecording = 1){
 		Msgbox, Can't Run Macro When Recording
 	}else{
-		for macroCompilerIndex, macroCompilerElement in macroCompilerArray
+		macroListRepeatCounter := MacroListRepeat
+		while(macroListRepeatCounter>=1)
 		{
-			macroListRepeatCounter := MacroListRepeat
-			while(macroListRepeatCounter>=1)
+			for macroCompilerIndex, macroCompilerElement in macroCompilerArray
 			{
-					runningMacroPath := saveMacroDirectory . macroCompilerElement
-					runningMacro := new MacroObject(runningMacroPath)
-					runningMacro.runMacro()
-					macroListRepeatCounter -= 1
+						runningMacroPath := saveMacroDirectory . macroCompilerElement
+						runningMacro := new MacroObject(runningMacroPath)
+						runningMacro.runMacro()
 			}
+			macroListRepeatCounter -= 1
 		}
 		MsgBox, Macro List Success
 	}
@@ -269,7 +269,7 @@ OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro sav
 				FileDelete, %filePath%
 			}
 			FileAppend, 0`n0`n100`n1`n, %filePath% ; Default Input For Coordinate Dispostion (0), Time Delay Onclick (0), Random Run Chance (100), Repeat Amount (1)
-
+			tTempCoordArray.RemoveAt(1)
 			xTemp := xTempCoordArray.RemoveAt(1)
 			yTemp := yTempCoordArray.RemoveAt(1)
 			tTemp := 0
