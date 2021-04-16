@@ -6,6 +6,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 global guiWindowX := 0
 global guiWindowY := 0
+global macroCompilerArray := []
 
 refresh:
 Gui,+LastFound
@@ -26,6 +27,7 @@ global tTempCoordArray := []
 global windowTempArray := []
 global gui_Id := ""
 FileList := ""
+macroList := ""
 CheckFolderExistence()
 
 ;GUI_____________________________________________________________________________
@@ -33,7 +35,7 @@ CheckFolderExistence()
 xMacroOptions := 20
 yMacroOptions := 20
 xMacroListOptions := 20
-yMacroListOptions := 320
+yMacroListOptions := 270
 
 ; General Layout
 GUI, 1:-AlwaysOnTop ; + makes it always stay up, - will make it go behind other windows
@@ -58,21 +60,28 @@ Loop, %saveMacroDirectory%\*.txt
 {
 	FileList = %FileList%|%A_LoopFileName%|
 }
-Gui, 1:Add, ListBox,  x%xMacroOptions% y+20 w380 h200 vMacroList, %FileList%
+Gui, 1:Add, ListBox,  x%xMacroOptions% y+20 w380 h150 vMacroList, %FileList%
 	; Macro Compiler Layout
 Gui, 1:Font, s14 cDDDDDD
 Gui, 1:Add, Text, x%xMacroListOptions% y%yMacroListOptions%, Macro Compiler
 Gui, 1:Font, s8 cDDDDDD
-Gui, 1:Add, Button, y+20, Add Macro
-Gui, 1:Add, Button, x+40, Remove Macro
-Gui, 1:Add, Button, x+40, Run Macro List
+Gui, 1:Add, Text, y+20, Repeat Amount:
+Gui, 1:Add, Edit, x+20 vMacroListRepeat Number limit1
+Gui, 1:Add, Updown, vrepeatAmount Range1-10, 1
+Gui, 1:Add, Button, x%xMacroListOptions% y+20 gaddMacro, Add Macro
+Gui, 1:Add, Button, x+40 gresetMacroList, Reset Macro List
+Gui, 1:Add, Button, x+40 grunMacroList, Run Macro List
+for macroCompilerIndex, macroCompilerElement in macroCompilerArray
+{
+	macroList = %macroList%|%macroCompilerElement%|
+}
+Gui, 1:Add, ListBox,  x%xMacroOptions% y+20 w380 h150 ReadOnly vMacroCompilerList, %macroList%
 return
 
 
 
 
 ;Labels_________________________________________________________________________
-
 runMacro: ; Should Minimize GUI
 	if(isRecording = 1){
 		Msgbox, Can't Run Macro When Recording
@@ -82,32 +91,58 @@ runMacro: ; Should Minimize GUI
 		runningMacroPath := saveMacroDirectory . MacroList
 		runningMacro := new MacroObject(runningMacroPath)
 		runningMacro.runMacro()
+		MsgBox, Macro Success
 	}
 	return
 
 editMacro:
+	; used to obtain MacroList variable (selected macro to edit)
+	Gui, Submit,NoHide
 	runningMacroPath := saveMacroDirectory . MacroList
-	runningMacro := new MacroObject(runningMacroPath)
-	; coordDispositionInput :=
-	; timeDelayInput :=
-	; runChanceInput :=
-	; repeatAmountInput :=
-	Gui, 2:Show, w430 h400, Settings
+	tempLocationDataArray := []
+
+	Loop, read, %runningMacroPath%
+	tempLocationDataArray.Push(A_LoopReadLine)
+
+	currentCoord := tempLocationDataArray.RemoveAt(1)
+	currentTime := tempLocationDataArray.RemoveAt(1)
+	currentRunChance := tempLocationDataArray.RemoveAt(1)
+	currentRepeatAmount := tempLocationDataArray.RemoveAt(1)
+
+	Gui, 2:Show, w430 h500, Settings
 	Gui, 2:Color, 222222
 	Gui, 1:+Disabled
 	Gui, 2:Font, s14 cDDDDDD
 	Gui, 2:Add, Text, x%xMacroOptions% y%yMacroOptions%, Settings
 	Gui, 2:Font, s10 cDDDDDD
-
-	Gui, 2:Add, Text, y+20, Random Coordinate Dispostion (Pixel Displacement Range:0-10)
-	Gui, 2:Add, Edit, y+20 w50 vCoord, 0
+	Gui, 2:Add, Text, y+20, Random Coordinate Dispostion (Pixel Displacement Range:0-20)
+	Gui, 2:Font, s10 c000000
+	Gui, 2:Add, Edit, y+20 w50 limit2 Number veditCoord, %currentCoord%
+	Gui, 2:Font, s10 cDDDDDD
 	Gui, 2:Add, Text, y+20, Random Time Delay Onclick (Millisecond Range:0-10000)
-	Gui, 2:Add, Edit, y+20 w50 vTime, 0
+	Gui, 2:Font, s10 c000000
+	Gui, 2:Add, Edit, y+20 w50 limit5 Number veditTime, %currentTime%
+	Gui, 2:Font, s10 cDDDDDD
 	Gui, 2:Add, Text, y+20, Random Run Chance (Percent Range:1-100)
-	Gui, 2:Add, Edit, y+20 w50 vrunChance, 100
+	Gui, 2:Font, s10 c000000
+	Gui, 2:Add, Edit, y+20 w50 limit3 Number veditRunChance, %currentRunChance%
+	Gui, 2:Font, s10 cDDDDDD
 	Gui, 2:Add, Text, y+20, Repeat Amount (Repeat Range:1-10)
-	Gui, 2:Add, Edit, y+20 w50 vrepeatAmount, 1
-	EditMacroAttributes()
+	Gui, 2:Font, s10 c000000
+	Gui, 2:Add, Edit, y+20 w50 limit2 Number veditRepeatAmount, %currentRepeatAmount%
+	Gui, 2:Add, Button, y+30 gsubmitMacroEdit, Submit
+	return
+
+submitMacroEdit:
+	; used to obtain varibles to edit macro attributes
+	Gui, Submit,NoHide
+	; Msgbox, %MacroList%
+	; Msgbox, 1: %editCoord% 2: %editTime% 3: %editRunChance% 4: %editRepeatAmount%
+	runningMacroPath := saveMacroDirectory . MacroList
+	runningMacro := new MacroObject(runningMacroPath)
+	runningMacro.editAttributes(runningMacroPath, editCoord, editTime, editRunChance, editRepeatAmount)
+	Gui, 1:-Disabled
+	Gui, 2:Destroy
 	return
 
 2GuiClose:
@@ -119,7 +154,6 @@ record:
 	isRecording=1
 	MouseGetPos,,,MacroWindowID
 	gui_Id = %MacroWindowID%
-	Msgbox, %gui_Id%
 	xTempCoordArray := []
 	yTempCoordArray := []
 	tTempCoordArray := []
@@ -134,14 +168,14 @@ stopRecording:
 
 
 MouseRecordingNotification:
-if(isRecording=1)
-{
-	MouseGetPos, px, py
-	ToolTip, Recording..., px+10, py+10
-}else{
-	ToolTip
-}
-return
+	if(isRecording=1)
+	{
+		MouseGetPos, px, py
+		ToolTip, Recording..., px+10, py+10
+	}else{
+		ToolTip
+	}
+	return
 
 ; Sends Mouse Coordinates and time into a variable
 ~LButton::
@@ -154,8 +188,55 @@ If (isRecording=1 and gui_Id != Window)
 	yTempCoordArray.Push(YPos)
 	tTempCoordArray.Push(time)
 	windowTempArray.Push(Window)
+	; Msgbox, %XPos%, %YPos%, %time%, %Window%
 }
 return
+
+addMacro:
+	Gui, Submit,NoHide
+	if(MacroList = ""){
+		Msgbox, Invalid Macro Choice
+		return
+	}
+	macroCompilerArray.Push(MacroList)
+	maxIndexTest:=macroCompilerArray.MaxIndex()
+	Goto, refresh
+
+resetMacroList:
+	macroCompilerArray := []
+	Goto, refresh
+
+runMacroList:
+	Gui, Submit,NoHide
+	if(isRecording = 1){
+		Msgbox, Can't Run Macro When Recording
+	}else{
+		for macroCompilerIndex, macroCompilerElement in macroCompilerArray
+		{
+			macroListRepeatCounter := MacroListRepeat
+			while(macroListRepeatCounter>=1)
+			{
+					runningMacroPath := saveMacroDirectory . macroCompilerElement
+					runningMacro := new MacroObject(runningMacroPath)
+					runningMacro.runMacro()
+					macroListRepeatCounter -= 1
+			}
+		}
+		MsgBox, Macro List Success
+	}
+	return
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -171,7 +252,7 @@ CheckFolderExistence() ; Checks if macro save directory is created
 }
 OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro save directory
 {
-	if (xTempCoordArray.MaxIndex()=1 || xTempCoordArray.MaxIndex()=""){
+	if (xTempCoordArray.MaxIndex()=0){
 		Msgbox, No actions were recorded. (Or actions were with this program)
 	}
 	else{
@@ -188,10 +269,6 @@ OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro sav
 				FileDelete, %filePath%
 			}
 			FileAppend, 0`n0`n100`n1`n, %filePath% ; Default Input For Coordinate Dispostion (0), Time Delay Onclick (0), Random Run Chance (100), Repeat Amount (1)
-			xTemp := xTempCoordArray.RemoveAt(1)
-			yTemp := yTempCoordArray.RemoveAt(1)
-			tTemp :=tTempCoordArray.RemoveAt(1)
-			winTemp := windowTempArray.RemoveAt(1)
 
 			xTemp := xTempCoordArray.RemoveAt(1)
 			yTemp := yTempCoordArray.RemoveAt(1)
@@ -212,10 +289,6 @@ OutputRecordedFile() ; outputs recorded clicks onto a text file in the macro sav
 		tTempCoordArray := []
 		windowTempArray := []
 	}
-}
-EditMacroAttributes()
-{
-
 }
 
 Class MacroObject{
@@ -260,10 +333,10 @@ Class MacroObject{
 				Random, runChanceCounter, 0,100
 				if(runChanceCounter<(this.runChance+1)){
 						this.runMacroOnce()
+						sleep, 2000
 				}
 				repeatCounter -= 1
 		}
-		MsgBox, Macro Success
 	}
 	runMacroOnce() ; runs recorded macro with random poistioning and timing offsets
 	{
@@ -290,7 +363,35 @@ Class MacroObject{
 		}
 		return
 	}
-	editAttributes(coordDispositionInput, timeDelayInput, runChanceInput, repeatAmountInput){
+	editAttributes(filePath, coordDispositionInput, timeDelayInput, runChanceInput, repeatAmountInput){
+		; Msgbox, %filePath%
+		saveMacroDirectory := A_ScriptDir . "\IndividualMacros\"
+		; Msgbox, %saveMacroDirectory%
+		if (!FileExist(filePath) or saveMacroDirectory = filePath)
+		{
+			Msgbox, This file doesnt exist: %filepath%
+			return
+		}
+		if(coordDispositionInput<0 or coordDispositionInput>20 or timeDelayInput<0 or timeDelayInput>10000 or runChanceInput<1 or runChanceInput>100 or repeatAmountInput<1 or repeatAmountInput>10){
+			Msgbox, Invalid Inputs
+			return
+		}
+		newLocationDataArray := []
+		Loop, read, %filePath%
+		newLocationDataArray.Push(A_LoopReadLine)
+		FileDelete, %filePath%
+
+		newLocationDataArray.RemoveAt(1)
+		newLocationDataArray.RemoveAt(1)
+		newLocationDataArray.RemoveAt(1)
+		newLocationDataArray.RemoveAt(1)
+		FileAppend, %coordDispositionInput%`n%timeDelayInput%`n%runChanceInput%`n%repeatAmountInput%`n, %filePath%
+		while newLocationDataArray.MaxIndex()>0
+		{
+			line := newLocationDataArray.RemoveAt(1)
+			FileAppend, %line%`n, %filePath%
+			; Msgbox, %line%
+		}
 		return
 	}
 }
