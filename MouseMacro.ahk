@@ -66,8 +66,8 @@ Gui, 1:Font, s14 cDDDDDD
 Gui, 1:Add, Text, x%xMacroListOptions% y%yMacroListOptions%, Macro Compiler
 Gui, 1:Font, s8 cDDDDDD
 Gui, 1:Add, Text, y+20, Repeat Amount:
-Gui, 1:Add, Edit, x+20 vMacroListRepeat Number limit1
-Gui, 1:Add, Updown, vrepeatAmount Range1-10, 1
+Gui, 1:Add, Edit, x+20 vMacroListRepeat Number limit2
+Gui, 1:Add, Updown, vrepeatAmount Range1-99, 1
 Gui, 1:Add, Button, x%xMacroListOptions% y+20 gaddMacro, Add Macro
 Gui, 1:Add, Button, x+40 gresetMacroList, Reset Macro List
 Gui, 1:Add, Button, x+40 grunMacroList, Run Macro List
